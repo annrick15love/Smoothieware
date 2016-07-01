@@ -562,6 +562,7 @@ void Endstops::process_home_command(Gcode* gcode)
         // Not a standard Gcode and not to be relied on
         if (gcode->has_letter('X')) saved_position[X_AXIS] = gcode->get_value('X');
         if (gcode->has_letter('Y')) saved_position[Y_AXIS] = gcode->get_value('Y');
+        gcode->stream->printf("Preset Position: X %5.3f Y %5.3f Z %5.3f\n", saved_position[X_AXIS], saved_position[Y_AXIS]);
         return;
 
     } else if(gcode->subcode == 3) { // G28.3 is a smoothie special it sets manual homing
