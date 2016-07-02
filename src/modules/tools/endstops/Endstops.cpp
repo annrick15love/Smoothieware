@@ -452,7 +452,7 @@ void Endstops::home_xy()
         //if X&Y have differnt home rates, this will make them each move at their designated rate during the combined move
         //calulate new distance so they are relative to each other, this will cause each axis to move at the designated rate
         float delta[3] {min_distance*fast_rates[X_AXIS]/feed_rate, min_distance*fast_rates[Y_AXIS]/feed_rate, 0}; 
-        feed_rate= sqrtf(pow(fast_rates[X_AXIS],2)+pow(fast_rates[Y_AXIS],2)); //calculate new feedrate for combined movement
+        feed_rate= sqrtf(powf(fast_rates[X_AXIS],2)+powf(fast_rates[Y_AXIS],2)); //calculate new feedrate for combined movement
         if(this->home_direction[X_AXIS]) delta[X_AXIS]= -delta[X_AXIS];
         if(this->home_direction[Y_AXIS]) delta[Y_AXIS]= -delta[Y_AXIS];
 
@@ -511,7 +511,7 @@ void Endstops::home(std::bitset<3> a)
     // find slowest time for move taking into accound distance to move of all three axes and use that amount of time for movement
     for ( int c = X_AXIS; c <= Z_AXIS; c++ ) {
         if(axis_to_home[c]) {
-            feed_time= max(retract_mm[c]*(1/slow_rates[c]),feed_time);
+            feed_time= std::max(retract_mm[c]*(1/slow_rates[c]),feed_time);
         }
     }
     float combined_retract=0;
@@ -519,7 +519,7 @@ void Endstops::home(std::bitset<3> a)
         if(axis_to_home[c]) {
             delta[c]= this->retract_mm[c];
             if(!this->home_direction[c]) delta[c]= -delta[c];
-            combined_retract = sqrtf(pow(retract_mm[c],2)+pow(combined_retract,2));
+            combined_retract = sqrtf(powf(retract_mm[c],2)+powf(combined_retract,2));
         }
     }
     retract_rate= combined_retract/feed_time;
@@ -536,7 +536,7 @@ void Endstops::home(std::bitset<3> a)
     float min_retract=0;
     for ( int c = X_AXIS; c <= Z_AXIS; c++ ) {
         if(axis_to_home[c]) {
-            min_retract= max(min_retract,(this->retract_mm[c]*2)); 
+            min_retract= std::max(min_retract,(this->retract_mm[c]*2)); 
         }
     }
     // find slowest feed rate of axis to be moved
@@ -553,7 +553,7 @@ void Endstops::home(std::bitset<3> a)
             delta[c]= min_retract * slow_rates[c]/feed_rate;
             //adjust feedrate so each axis is traveling at the speed specified by it's slow_rates
             //this is so each axis will be travelling at the same speed whether homed individually or together
-            fix_rate= sqrtf(pow(slow_rates[c],2)+pow(fix_rate,2));
+            fix_rate= sqrtf(powf(slow_rates[c],2)+powf(fix_rate,2));
             if(this->home_direction[c]) delta[c]= -delta[c];
         }else{
             delta[c]= 0;
