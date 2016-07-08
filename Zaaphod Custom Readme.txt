@@ -1,4 +1,8 @@
-This branch is for customizing smoothieware for my machines.
+This branch is for customizing smoothieware for Zaaphod's machines.
+
+Implemented Changes:
+    Home Feedrate adjustments
+        Home feedrates are now constant and correct regardless of how many axis are homed simultaneously
 
 Planned changes:
 
@@ -34,3 +38,13 @@ Modify Home procedure.
             There are times the rapid rate could be changed for G0 feedrate, but then you want a quick way to reset it 
             back to default.  These defaults can be different on different machines so the best solution is on which 
             does not require a hard coded feedrate in a program.
+
+Limit Switch - E-Stop recovery.
+    Summary:
+        Smoothie depends on disabling the stepper drives for endstop and e-stop recovery.  
+        The drives are disabled to prevent steps until after M999 is issued.  
+        I cannot disable the drives because the Z axis would drop, the spriral of the still turning bit would pull it down
+        all the way through the table if I disabled the steppers while it was still turning and enagaged in material.
+        Currently when M999 is issued, the previous move completes very quickly, also the next move after M999 is very fast as well.
+        Some other way must be found to deal with this.  Either by disabling the step pins themselves or somehow clearing the 
+        current move from the buffer so there are no pending steps.
