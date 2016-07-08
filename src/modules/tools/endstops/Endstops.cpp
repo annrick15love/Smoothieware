@@ -480,6 +480,10 @@ void Endstops::home(std::bitset<3> a)
     // reset debounce counts
     debounce.fill(0);
 
+    // turn off any compensation transform
+    auto savect= THEROBOT->compensationTransform;
+    THEROBOT->compensationTransform= nullptr;
+
     this->axis_to_home= a;
 
     // Start moving the axes to the origin
@@ -568,6 +572,9 @@ void Endstops::home(std::bitset<3> a)
     THEROBOT->reset_position_from_current_actuator_position();
 
     THEROBOT->disable_segmentation= false;
+
+    // restore compensationTransform
+    THEROBOT->compensationTransform= savect;
 
     this->status = NOT_HOMING;
 }

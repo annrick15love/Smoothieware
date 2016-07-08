@@ -27,6 +27,7 @@ class Extruder : public Tool {
 
         void select();
         void deselect();
+        float get_e_scale(void) const { return volumetric_multiplier * extruder_multiplier; }
 
     private:
         void config_load();
@@ -60,5 +61,6 @@ class Extruder : public Tool {
             bool cancel_zlift_restore:1; // hack to stop a G11 zlift restore from overring an absolute Z setting
             bool selected:1;
             bool saved_selected:1;
+            bool g92e0_detected:1;
         };
 };
