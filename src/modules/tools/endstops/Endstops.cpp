@@ -106,6 +106,7 @@
 #define home_z_first_checksum            CHECKSUM("home_z_first")
 #define homing_order_checksum            CHECKSUM("homing_order")
 #define move_to_origin_checksum          CHECKSUM("move_to_origin_after_home")
+#define home_resets_seek_rate_checksum   CHECKSUM("home_resets_seek_rate")
 
 #define STEPPER THEROBOT->actuators
 #define STEPS_PER_MM(a) (STEPPER[a]->get_steps_per_mm())
@@ -238,6 +239,9 @@ void Endstops::load_config()
 
     // set to true by default for deltas due to trim, false on cartesians
     this->move_to_origin_after_home = THEKERNEL->config->value(move_to_origin_checksum)->by_default(is_delta)->as_bool();
+
+    // set to false by default
+    this->home_resets_seek_rate = THEKERNEL->config->value(home_resets_seek_rate_checksum)->by_default(false)->as_bool();
 
     if(this->limit_enable[X_AXIS] || this->limit_enable[Y_AXIS] || this->limit_enable[Z_AXIS]) {
         register_for_event(ON_IDLE);
@@ -376,12 +380,17 @@ void Endstops::move_to_origin(std::bitset<3> axis)
     // float pos[3]; THEROBOT->get_axis_position(pos); if(pos[0] == 0 && pos[1] == 0) return;
 
     this->status = MOVE_TO_ORIGIN;
-    // Move to center using a regular move, use slower of X and Y fast rate
-    float rate = std::min(this->fast_rates[0], this->fast_rates[1]) * 60.0F;
+    // Move to center using a regular G0 move
     char buf[32];
     THEROBOT->push_state();
     THEROBOT->inch_mode = false;     // needs to be in mm
-    snprintf(buf, sizeof(buf), "G53 G0 X0 Y0 F%1.4f", rate); // must use machine coordinates in case G92 or WCS is in effect
+    // must use machine coordinates in case G92 or WCS is in effect
+    if(home_resets_seek_rate) { 
+    snprintf(buf, sizeof(buf), "G53 G0 X0 Y0 F%1.4f", THEROBOT->default_seek_rate); // use default_seek_rate if home_resets_seek_rate
+    } else {
+        float rate = std::min(fast_rates[0], fast_rates[1]) * 60.0F; // use slowest of X or Y fast home speed
+        snprintf(buf, sizeof(buf), "G53 G0 X0 Y0 F%1.4f", rate); 
+    }
     struct SerialMessage message;
     message.message = buf;
     message.stream = &(StreamOutput::NullStream);
@@ -585,6 +594,7 @@ void Endstops::process_home_command(Gcode* gcode)
         // G28 in grbl mode or G28.2 in normal mode will do a rapid to the predefined position
         // TODO spec says if XYZ specified move to them first then move to MCS of specifed axis
         char buf[32];
+        if(home_resets_seek_rate) THEROBOT->seek_rate= THEROBOT->default_seek_rate;
         snprintf(buf, sizeof(buf), "G53 G0 X%f Y%f", saved_position[X_AXIS], saved_position[Y_AXIS]); // must use machine coordinates in case G92 or WCS is in effect
         struct SerialMessage message;
         message.message = buf;
@@ -602,7 +612,7 @@ void Endstops::process_home_command(Gcode* gcode)
         // Not a standard Gcode and not to be relied on
         if (gcode->has_letter('X')) saved_position[X_AXIS] = gcode->get_value('X');
         if (gcode->has_letter('Y')) saved_position[Y_AXIS] = gcode->get_value('Y');
-        gcode->stream->printf("Preset Position: X %5.3f Y %5.3f Z %5.3f\n", saved_position[X_AXIS], saved_position[Y_AXIS]);
+        gcode->stream->printf("Preset Position: X %5.3f Y %5.3f\n", saved_position[X_AXIS], saved_position[Y_AXIS]);
         return;
 
     } else if(gcode->subcode == 3) { // G28.3 is a smoothie special it sets manual homing
@@ -623,6 +633,10 @@ void Endstops::process_home_command(Gcode* gcode)
         if(gcode->has_letter('Y')) ac[1] =  gcode->get_value('Y');
         if(gcode->has_letter('Z')) ac[2] =  gcode->get_value('Z');
         THEROBOT->reset_actuator_position(ac);
+        return;
+
+    } else if(gcode->subcode == 5) { // G28.5 is a zaaphod/smoothie special it resets seek rate to default
+        THEROBOT->seek_rate = THEROBOT->default_seek_rate;
         return;
 
     } else if(THEKERNEL->is_grbl_mode()) {
@@ -759,6 +773,9 @@ void Endstops::process_home_command(Gcode* gcode)
         // also need to back off endstops if limits are enabled
         back_off_home(haxis);
         if(this->move_to_origin_after_home) move_to_origin(haxis);
+    }
+    if(home_resets_seek_rate) {
+        THEROBOT->seek_rate= THEROBOT->default_seek_rate;
     }
 }
 

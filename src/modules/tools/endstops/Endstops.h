@@ -65,5 +65,6 @@ class Endstops : public Module{
             bool is_scara:1;
             bool home_z_first:1;
             bool move_to_origin_after_home:1;
+            bool home_resets_seek_rate:1;
         };
 };

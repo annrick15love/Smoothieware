@@ -86,6 +86,8 @@ class Robot : public Module {
             uint8_t plane_axis_1:2;
             uint8_t plane_axis_2:2;
         };
+        float default_seek_rate;                             // Default rate for seeking moves ( mm/min )
+        float seek_rate;                                     // Current rate for seeking moves ( mm/min )
 
     private:
         enum MOTION_MODE_T {
@@ -120,7 +122,6 @@ class Robot : public Module {
         float last_milestone[k_max_actuators]; // Last requested position, in millimeters, which is what we were requested to move to in the gcode after offsets applied but before compensation transform
         float last_machine_position[k_max_actuators]; // Last machine position, which is the position before converting to actuator coordinates (includes compensation transform)
 
-        float seek_rate;                                     // Current rate for seeking moves ( mm/min )
         float feed_rate;                                     // Current rate for feeding moves ( mm/min )
         float mm_per_line_segment;                           // Setting : Used to split lines into segments
         float mm_per_arc_segment;                            // Setting : Used to split arcs into segments
