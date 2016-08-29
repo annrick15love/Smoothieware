@@ -388,7 +388,7 @@ void Endstops::move_to_origin(std::bitset<3> axis)
     char buf[32];
     THEROBOT->push_state();
     THEROBOT->inch_mode = false;     // needs to be in mm
-    // must use machine coordinates in case G92 or WCS is in effect
+    THEROBOT->absolute_mode = true;
     if(home_resets_seek_rate) { 
     snprintf(buf, sizeof(buf), "G53 G0 X0 Y0 F%1.4f", THEROBOT->default_seek_rate); // use default_seek_rate if home_resets_seek_rate
     } else {
@@ -597,6 +597,9 @@ void Endstops::process_home_command(Gcode* gcode)
     if( (gcode->subcode == 0 && THEKERNEL->is_grbl_mode()) || (gcode->subcode == 2 && !THEKERNEL->is_grbl_mode()) ) {
         // G28 in grbl mode or G28.2 in normal mode will do a rapid to the predefined position
         // TODO spec says if XYZ specified move to them first then move to MCS of specifed axis
+        THEROBOT->push_state();
+        THEROBOT->inch_mode = false;     // needs to be in mm
+        THEROBOT->absolute_mode = true;
         char buf[32];
         if(home_resets_seek_rate) THEROBOT->seek_rate= THEROBOT->default_seek_rate;
         snprintf(buf, sizeof(buf), "G53 G0 X%f Y%f", saved_position[X_AXIS], saved_position[Y_AXIS]); // must use machine coordinates in case G92 or WCS is in effect
@@ -604,6 +607,9 @@ void Endstops::process_home_command(Gcode* gcode)
         message.message = buf;
         message.stream = &(StreamOutput::NullStream);
         THEKERNEL->call_event(ON_CONSOLE_LINE_RECEIVED, &message ); // as it is a multi G code command
+        // Wait for above to finish
+        THECONVEYOR->wait_for_idle();
+        THEROBOT->pop_state();
         return;
 
     } else if(THEKERNEL->is_grbl_mode() && gcode->subcode == 2) { // G28.2 in grbl mode forces homing (triggered by $H)
