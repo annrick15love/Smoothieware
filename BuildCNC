@@ -1,0 +1,6 @@
+Make Clean
+Make CNC=1
+cp main.bin Firmware/Zaaphod-CNC.bin
+md5sum FirmwareBin/Zaaphod-CNC.bin > FirmwareBin/Zaaphod-CNC.bin.md5sum
+
+
