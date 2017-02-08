@@ -22,9 +22,9 @@ class StepperMotor;
 class Block;
 
 // handle 2.30 Fixed point
-#define STEPTICKER_FPSCALE (1<<30)
-#define STEPTICKER_TOFP(x) ((int32_t)roundf((float)(x)*STEPTICKER_FPSCALE))
-#define STEPTICKER_FROMFP(x) ((float)(x)/STEPTICKER_FPSCALE)
+#define STEPTICKER_FPSCALE (1)
+#define STEPTICKER_TOFP(x) (x)
+#define STEPTICKER_FROMFP(x) (x)
 
 class StepTicker{
     public:
